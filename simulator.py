@@ -49,11 +49,12 @@ def run_simulation(iterations: int = 100):
                 phi_blocked_count += 1
 
     elapsed = time.time() - start_time
+    throughput = iterations / elapsed if elapsed > 0 else 0.0
     print("\n" + "=" * 70)
     print(f"  SIMULATION SUMMARY FOR DERMATOLOGY MULTIMODAL DERMOSCOPY")
     print("=" * 70)
     print(f"  Total Tasks Processed:     {iterations}")
-    print(f"  Elapsed Time:              {elapsed:.3f} seconds ({iterations/max(0.001, elapsed):.1f} tasks/sec)")
+    print(f"  Elapsed Time:              {elapsed:.3f} seconds ({throughput:.1f} tasks/sec)")
     print(f"  Routine Outcomes:          {nominal_count} ({nominal_count/iterations*100:.1f}%)")
     print(f"  Elevated Risk Outcomes:    {elevated_count} ({elevated_count/iterations*100:.1f}%)")
     print(f"  Critical Interventions:    {critical_count} ({critical_count/iterations*100:.1f}%)")
