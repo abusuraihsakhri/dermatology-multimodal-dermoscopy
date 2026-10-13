@@ -1,5 +1,7 @@
 # Dermatology Multimodal Dermoscopy
 
+### [Open the Live Application →](https://abusuraihsakhri.github.io/dermatology-multimodal-dermoscopy/)
+
 A **research software demonstration** of deterministic task-evaluation rules, CSV batch processing, and an in-memory HMAC-SHA256 event ledger. The repository also contains a standalone browser interface for exploring the same example rules.
 
 **Important limitations:** Despite the project name, the current implementation does **not** ingest clinical or dermoscopic images, perform multimodal fusion, compute a validated seven-point dermoscopy score, classify melanoma, or provide diagnostic decision support. Its numeric thresholds (primary > 25; secondary > 12) and descriptor checks are example conditions without established clinical validity. The mock chat responder does not run a language model.
@@ -14,7 +16,7 @@ python -m http.server 8001
 # Open http://localhost:8001/
 ```
 
-The browser interface evaluates the synthetic conditions in JavaScript and exports a JSON result. It does not use Python, upload inputs, load external analytics or models, or generate a cryptographic audit signature. **Do not enter patient or identifiable personal data.** A GitHub Pages publishing workflow is included; the public URL must be verified after deployment before it is advertised as live.
+The browser interface evaluates the synthetic conditions in JavaScript and exports a JSON result. It does not use Python, upload inputs, load external analytics or models, or generate a cryptographic audit signature. **Do not enter patient or identifiable personal data.** The live GitHub Pages deployment is checked by an automated post-deployment HTTP smoke test for the published HTML and JavaScript module.
 
 ## Python setup
 
