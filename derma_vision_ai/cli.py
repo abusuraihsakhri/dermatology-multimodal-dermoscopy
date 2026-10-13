@@ -11,6 +11,18 @@ from .agents import DermaVisionCoordinator
 coordinator = DermaVisionCoordinator()
 
 
+def parse_csv_boolean(value):
+    """Parse explicit CSV boolean tokens without treating 'False' as truthy."""
+    if isinstance(value, bool):
+        return value
+    token = str(value).strip().lower()
+    if token in ("true", "1", "yes", "y"):
+        return True
+    if token in ("false", "0", "no", "n", ""):
+        return False
+    raise ValueError("Invalid boolean CSV field")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="dermatology-multimodal-dermoscopy", description="DermaVision-AI: Clinical & Dermoscopic Dual-Modality Fusion Agent")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -78,24 +90,29 @@ def main(argv=None):
             fieldnames = list(reader.fieldnames or [])
             rows = list(reader)
 
-        out_fields = fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]
+        out_fields = list(dict.fromkeys(fieldnames + ["overall_status", "total_alerts", "critical_count", "consensus_summary"]))
         out_rows = []
-        for r in rows:
-            payload = FrontierPayload(
-                task_id=r.get("task_id", "TASK-01"),
-                target_identifier=r.get("target_identifier", "TARGET-01"),
-                primary_metric=float(r.get("primary_metric", 15.0)),
-                secondary_metric=float(r.get("secondary_metric", 5.0)),
-                status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
-            )
-            dossier = coordinator.process(payload)
-            row_dict = dict(r)
-            row_dict["overall_status"] = dossier["overall_status"]
-            row_dict["total_alerts"] = dossier["total_alerts"]
-            row_dict["critical_count"] = dossier["critical_count"]
-            row_dict["consensus_summary"] = dossier["consensus_summary"]
-            out_rows.append(row_dict)
+        try:
+            for row_number, r in enumerate(rows, start=2):
+                payload = FrontierPayload(
+                    task_id=r.get("task_id", "TASK-01"),
+                    target_identifier=r.get("target_identifier", "TARGET-01"),
+                    primary_metric=float(r.get("primary_metric", 15.0)),
+                    secondary_metric=float(r.get("secondary_metric", 5.0)),
+                    status_descriptor=r.get("status_descriptor", "NOMINAL"),
+                    is_critical_flag=parse_csv_boolean(r.get("is_critical_flag", False)),
+                )
+                dossier = coordinator.process(payload)
+                row_dict = dict(r)
+                row_dict["overall_status"] = dossier["overall_status"]
+                row_dict["total_alerts"] = dossier["total_alerts"]
+                row_dict["critical_count"] = dossier["critical_count"]
+                row_dict["consensus_summary"] = dossier["consensus_summary"]
+                out_rows.append(row_dict)
+    
+        except (ValueError, TypeError):
+            print(f"Error: invalid CSV values at row {row_number}.", file=sys.stderr)
+            return 1
 
         with open(args.output, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=out_fields)
