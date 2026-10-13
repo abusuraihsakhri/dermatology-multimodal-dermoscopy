@@ -1,171 +1,75 @@
 # Dermatology Multimodal Dermoscopy
 
-> **Domain:** Clinical Decision Support & Biomedical Computing
-> **Reference Guidelines & Standards:** CAP / CLSI / ISO Standards, ISIC Dermoscopy Challenge Standards
+A **research software demonstration** of deterministic task-evaluation rules, CSV batch processing, and an in-memory HMAC-SHA256 event ledger. The repository also contains a standalone browser interface for exploring the same example rules.
 
-<div align="center">
+**Important limitations:** Despite the project name, the current implementation does **not** ingest clinical or dermoscopic images, perform multimodal fusion, compute a validated seven-point dermoscopy score, classify melanoma, or provide diagnostic decision support. Its numeric thresholds (primary > 25; secondary > 12) and descriptor checks are example conditions without established clinical validity. The mock chat responder does not run a language model.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## Browser demonstration
 
-</div>
-
----
-
-## 📖 What It Does
-
-Dermatology Multimodal Dermoscopy is an enterprise-grade clinical decision support platform that orchestrates multi-agent AI workers to evaluate dermoscopic and clinical data. It performs risk classification, protocol conformance checking, and safety escalation with cryptographic audit trail integrity.
-
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-- **Multi-Agent Worker Orchestration**: Specialized workers (InvariantQC, SafetyEscalation, ProtocolConformance) evaluate tasks independently
-- **Deterministic Calculation Engine**: Strict compliance with standard reference formulations and thresholds
-- **Risk & Urgency Classification**: Multi-tier categorization (ROUTINE, ELEVATED_RISK, CRITICAL_STAT_PANIC) with automated action recommendations
-- **Zero-PHI Outbound Guard**: AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers
-- **HMAC-SHA256 Audit Trail**: Chained, cryptographically signed logs for every evaluation and state transition
-- **FastAPI REST API**: OpenAPI 3.1 endpoints for audit, chat, and metrics
-- **Prometheus Telemetry**: Operational metrics exporter
-- **Active Learning Calibration**: Bayesian worker reliability weight tracking
-
----
-
-## 🏗️ Project Structure
-
-```
-├── agents/                      # Core enterprise agent framework
-│   ├── __init__.py
-│   ├── api.py                   # FastAPI REST server
-│   ├── base.py                  # PHI Guard, Audit Trail, Security
-│   ├── learning.py              # Bayesian calibration engine
-│   ├── llm_factory.py           # LLM provider abstraction
-│   ├── metrics.py               # Prometheus metrics collector
-│   ├── models.py                # Pydantic v2 data schemas
-│   ├── streamer.py              # WebSocket telemetry broadcaster
-│   ├── supervisor.py            # Master orchestrator
-│   └── workers.py               # Specialized worker agents
-├── derma_vision_ai/             # Frontier dual-modality fusion agent
-│   ├── __init__.py
-│   ├── agents.py                # Sub-agents and coordinator
-│   ├── cli.py                   # Frontier CLI
-│   ├── engine.py                # Core algorithmic engine
-│   ├── models.py                # Frontier data models
-│   └── server.py                # Frontier FastAPI server
-├── tests/                       # Pytest test suite
-├── cli.py                       # Main CLI entry point
-├── derma_vision_ai_app.py       # Alternative entry point
-├── enrichment.py                # Domain enrichment agents (ISIC, RCM, TBP, etc.)
-├── simulator.py                 # High-throughput stress testing
-├── pyproject.toml               # Package manifest
-├── Dockerfile                   # Container build
-└── docker-compose.yml           # Container orchestration
-```
-
----
-
-## 💻 Installation
+A static, local-only numerical rule demonstration is available in [`web/`](web/). To run it locally:
 
 ```bash
-# Clone the repository
+cd web
+python -m http.server 8001
+# Open http://localhost:8001/
+```
+
+The browser interface evaluates the synthetic conditions in JavaScript and exports a JSON result. It does not use Python, upload inputs, load external analytics or models, or generate a cryptographic audit signature. **Do not enter patient or identifiable personal data.** A GitHub Pages publishing workflow is included; the public URL must be verified after deployment before it is advertised as live.
+
+## Python setup
+
+Requires Python 3.9 or newer. To install the package and API/test dependencies:
+
+```bash
 git clone https://github.com/abusuraihsakhri/dermatology-multimodal-dermoscopy.git
 cd dermatology-multimodal-dermoscopy
-
-# Install dependencies
-pip install fastapi uvicorn pydantic pytest
-
-# For Docker deployment
-cp .env.example .env
-# Edit .env and set AUDIT_SECRET_KEY
-docker-compose up --build
+python -m pip install -e ".[api,test]"
+python -m pytest -q
 ```
 
----
+The package exposes two entry points: `dermatology-multimodal-audit` (the `agents/` rule and ledger workflow) and `dermatology-multimodal-dermoscopy` (the legacy `derma_vision_ai/` rule workflow).
 
-## 💻 CLI Quickstart & Usage
+## CLI and API
 
-### 1. Single Task Evaluation
 ```bash
-python cli.py audit --task-id TASK-001 --target KEY-01 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
-```
-
-### 2. Supervisory Chat
-```bash
-python cli.py chat "What is the system status?"
-```
-
-### 3. Batch CSV Processing
-```bash
+# Main rule engine, using synthetic identifiers
+python cli.py audit --task-id DEMO-001 --target SYNTH-001 --primary 28.5 --secondary 14.2
 python cli.py batch -i sample.csv -o results.csv
-```
-
-### 4. Verify Audit Trail Integrity
-```bash
 python cli.py verify-audit
-```
 
-### 5. Launch REST API Server
-```bash
+# Local API server (not intended for public exposure)
 python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
-### Parameter Reference
-| Parameter | Description | Default |
-|:----------|:------------|:--------|
-| `--task-id` | Unique task/case identifier | TASK-2026-001 |
-| `--target` | Entity or patient key | KEY-TARGET-01 |
-| `--primary` | Primary measurement/score | 28.5 |
-| `--secondary` | Secondary kinetic/confidence score | 14.2 |
-| `--critical` | Emergency escalation flag | False |
-| `--status` | Status code/phenotype descriptor | DISCORDANT |
+On the FastAPI server, `GET /health` returns health metadata, `POST /api/audit` evaluates a structured numeric payload, `POST /api/chat` returns a mock response, and `GET /api/audit/logs` returns in-memory ledger metadata. Interactive API documentation is available at `/docs`. The alternate `derma_vision_ai/` package has a separate CLI and API schema.
 
----
+## Security and data handling
 
-## 🛡️ Security & Enterprise Architecture
+The Python workflow screens some common identifiers with regular expressions, but **this is not comprehensive de-identification or a guarantee of HIPAA/GDPR compliance**. The API has no built-in authentication and maintains task dossiers in server memory. Do not send real patient information or expose the API on a public network without adding appropriate authentication, transport security, data governance, and independent security review.
 
-* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOBs, and patient names.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Audit Secret Key:** Configurable via `AUDIT_SECRET_KEY` environment variable. A random ephemeral key is generated at runtime if not set (with a warning).
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances, Claude, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring calibration drift.
+The ledger signs each event using an HMAC-SHA256 key supplied through `AUDIT_SECRET_KEY`. It checks every signature and hash-chain link, but the ledger is **in-memory only**: records are lost on restart and are not a durable or independently anchored audit log. An ephemeral key is used when no key is configured. CSV outputs are written to local files. The browser demo stores no records persistently.
 
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
+## Docker
 
 ```bash
-pytest -v
-```
-
-Execute high-throughput batch simulation benchmarks:
-
-```bash
-python simulator.py 1000
-```
-
----
-
-## 🐳 Container Deployment
-
-```bash
-# Build and run with Docker Compose
 cp .env.example .env
-# Set AUDIT_SECRET_KEY in .env
-docker-compose up --build
-
-# Or use Docker directly
-docker build -t dermatology-multimodal-dermoscopy .
-docker run -p 8000:8000 --env AUDIT_SECRET_KEY=your-secret-key dermatology-multimodal-dermoscopy
+# Set AUDIT_SECRET_KEY to a fresh random value before starting
+docker compose up --build
 ```
 
----
+Docker Compose binds the local API port 8000. The container setup is a development/deployment example, not a hardened production configuration.
 
-## 📄 License
+## Structure and testing
 
-MIT License - see [LICENSE](LICENSE) for details.
+- `agents/`: primary rule workers, FastAPI, mock responder, ledger, and experimental utility modules.
+- `derma_vision_ai/`: alternative legacy numeric-rule engine and CLI.
+- `enrichment.py`: named domain-enrichment *placeholders*; no imaging or trained inference is implemented.
+- `web/`: standalone JavaScript browser demonstration and Node tests.
+- `tests/`: Python unit and regression tests.
+- `.github/workflows/`: automated Python/JavaScript checks and static-site publishing.
+
+Run `python -m pytest -q` and `node --test web/app.test.mjs` before releasing. The standalone page targets current evergreen desktop and mobile browsers with ES-module support; the Python API is a separate server-based workflow.
+
+## License
+
+[MIT](LICENSE).
